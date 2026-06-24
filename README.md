@@ -97,37 +97,40 @@ NODE_ENV=development
 
 ## ☁️ Render Deployment Guide
 
-SD-Share is deployment-ready for [Render.com](https://render.com) with **Zero-Config Environments**. The app automatically detects its host environment and wires up internal URLs on the fly.
+SD-Share is deployment-ready for [Render.com](https://render.com).
 
-### Option 1: Unified Full-Stack Service (Recommended)
-Host both the Next.js frontend and Express backend on a single unified server instance. Express natively handles WebSocket traffic and silently proxies UI requests to the Next.js instance running securely in the background.
-
-**Web Service Setup:**
-- Name: `sd-share`
-- Root Directory: *(Leave completely blank)*
-- Environment: `Node`
-- Build Command: `npm run install-all && npm run build`
-- Start Command: `npm start`
-- Environment Variables:
-  - `NODE_ENV=production`
-*(No URL configuration needed! The codebase automatically detects Render's internal URLs.)*
-
-### Option 2: Separate Services (For Heavy Scaling)
-Host the frontend and backend on two completely separate Render instances.
+### Option 1: Separate Services (Recommended for Scale)
 
 **Backend (Web Service):**
-- Root Directory: `backend`
+- Environment: Node
 - Build Command: `npm install`
 - Start Command: `npm start`
+- Root Directory: `backend`
 - Environment Variables:
   - `NODE_ENV=production`
+  - `FRONTEND_URL=https://your-frontend-url.onrender.com`
 
 **Frontend (Static Site or Web Service):**
-- Root Directory: `frontend`
+- Environment: Node
 - Build Command: `npm install && npm run build`
 - Start Command: `npm start`
+- Root Directory: `frontend`
 - Environment Variables:
   - `NEXT_PUBLIC_SOCKET_URL=https://your-backend-url.onrender.com`
+
+### Option 2: Unified Monorepo Deployment (Zero-Config)
+SD-Share is engineered to seamlessly deploy as a **Single Full-Service Application** on Render, where the backend proxies requests to the frontend automatically. 
+
+1. **Create a Web Service** on Render and connect your repository.
+2. **Configuration:**
+   - **Environment:** `Node`
+   - **Root Directory:** *(Leave completely empty!)*
+   - **Build Command:** `npm run install-all && npm run build`
+   - **Start Command:** `npm start`
+3. **Environment Variables:**
+   - `NODE_ENV=production`
+   
+*Note: You do **NOT** need to configure URLs! The backend auto-detects `RENDER_EXTERNAL_URL`, and the frontend auto-detects `window.location.origin`, making this a true Zero-Config deployment!*
 
 ## 🔮 Future Roadmap
 

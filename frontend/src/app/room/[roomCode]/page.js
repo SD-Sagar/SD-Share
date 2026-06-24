@@ -158,40 +158,40 @@ export default function RoomPage(props) {
                       key={file.id} 
                       className="bg-zinc-900/50 p-4 rounded-lg border border-zinc-800"
                     >
-                      <div className="flex justify-between items-start mb-2">
-                        <div>
-                          <p className="font-medium truncate max-w-[200px] sm:max-w-xs">
+                      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start mb-2 gap-3 sm:gap-0">
+                        <div className="min-w-0">
+                          <p className="font-medium truncate max-w-full sm:max-w-xs">
                             {file.name}
-                            {file.isMine && <span className="ml-2 text-[10px] uppercase bg-indigo-500/20 text-indigo-400 px-2 py-0.5 rounded-full">Sent by you</span>}
+                            {file.isMine && <span className="ml-2 text-[10px] uppercase bg-indigo-500/20 text-indigo-400 px-2 py-0.5 rounded-full inline-block align-middle">Sent by you</span>}
                           </p>
-                          <p className="text-xs text-zinc-400">{(file.size / (1024 * 1024)).toFixed(2)} MB</p>
+                          <p className="text-xs text-zinc-400 mt-1 sm:mt-0">{(file.size / (1024 * 1024)).toFixed(2)} MB</p>
                         </div>
-                        <div className="flex items-center space-x-1 sm:space-x-2">
+                        <div className="flex flex-wrap items-center gap-2">
                           {/* Sender Buttons */}
                           {file.isMine && status === 'ready' && (!transfers[file.id] || transfers[file.id]?.status === 'idle') && (
-                            <Button size="sm" className="h-7 text-[10px] px-2 sm:h-9 sm:text-sm sm:px-3" onClick={() => startTransfer(file.id)}>Announce</Button>
+                            <Button size="sm" onClick={() => startTransfer(file.id)}>Announce</Button>
                           )}
                           {file.isMine && status === 'ready' && transfers[file.id] && ['waiting'].includes(transfers[file.id]?.status) && (
-                            <Button size="sm" variant="outline" className="h-7 text-[10px] px-2 sm:h-9 sm:text-sm sm:px-3" disabled>Waiting...</Button>
+                            <Button size="sm" variant="outline" disabled>Waiting...</Button>
                           )}
                           {file.isMine && status === 'ready' && transfers[file.id] && ['disconnected', 'canceled', 'completed'].includes(transfers[file.id]?.status) && (
-                            <Button size="sm" className="h-7 text-[10px] px-2 sm:h-9 sm:text-sm sm:px-3" onClick={() => startTransfer(file.id)}>Resend</Button>
+                            <Button size="sm" onClick={() => startTransfer(file.id)}>Resend</Button>
                           )}
                           
                           {/* Receiver Buttons */}
                           {!file.isMine && (!transfers[file.id] || ['idle', 'waiting', 'disconnected', 'canceled'].includes(transfers[file.id]?.status)) && (
-                            <Button size="sm" className="h-7 text-[10px] px-2 sm:h-9 sm:text-sm sm:px-3" onClick={() => requestDownload(file.id)}>Download</Button>
+                            <Button size="sm" onClick={() => requestDownload(file.id)}>Download</Button>
                           )}
                           
                           {transfers[file.id]?.status === 'transferring' && (
-                            <Button size="sm" variant="destructive" className="h-7 text-[10px] px-2 sm:h-9 sm:text-sm sm:px-3" onClick={() => cancelTransfer(file.id)}>
-                              <XCircle className="w-3 h-3 sm:w-4 sm:h-4 mr-1" /> Cancel
+                            <Button size="sm" variant="destructive" onClick={() => cancelTransfer(file.id)}>
+                              <XCircle className="w-4 h-4 mr-1" /> Cancel
                             </Button>
                           )}
                           
                           {transfers[file.id]?.status !== 'transferring' && (
-                            <Button size="sm" variant="ghost" className="h-7 w-7 p-0 sm:h-9 sm:w-9 sm:p-auto text-red-400 hover:text-red-300 hover:bg-red-400/10" onClick={() => removeFromQueue(file.id)}>
-                              <Trash2 className="w-3 h-3 sm:w-4 sm:h-4" />
+                            <Button size="sm" variant="ghost" className="text-red-400 hover:text-red-300 hover:bg-red-400/10" onClick={() => removeFromQueue(file.id)}>
+                              <Trash2 className="w-4 h-4" />
                             </Button>
                           )}
                         </div>
