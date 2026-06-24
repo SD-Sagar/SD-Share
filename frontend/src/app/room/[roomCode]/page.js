@@ -117,27 +117,25 @@ export default function RoomPage(props) {
         {/* Main Content Area */}
         <div className="lg:col-span-2 space-y-6">
           
-          {isCreator && (
-            <Card className="border-dashed border-2 border-zinc-800 hover:border-indigo-500/50 transition-colors">
-              <CardContent className="flex flex-col items-center justify-center py-12">
-                <UploadCloud className="w-12 h-12 text-zinc-500 mb-4" />
-                <h3 className="text-xl font-semibold mb-2">Select Files to Share</h3>
-                <p className="text-zinc-400 text-sm mb-6 text-center max-w-sm">
-                  Drag and drop files here, or click to select files. Files are transferred directly to the receiver.
-                </p>
-                <input
-                  type="file"
-                  multiple
-                  className="hidden"
-                  id="file-upload"
-                  onChange={(e) => handleFileSelect(e.target.files)}
-                />
-                <Button onClick={() => document.getElementById('file-upload').click()}>
-                  Browse Files
-                </Button>
-              </CardContent>
-            </Card>
-          )}
+          <Card className="border-dashed border-2 border-zinc-800 hover:border-indigo-500/50 transition-colors">
+            <CardContent className="flex flex-col items-center justify-center py-12">
+              <UploadCloud className="w-12 h-12 text-zinc-500 mb-4" />
+              <h3 className="text-xl font-semibold mb-2">Select Files to Share</h3>
+              <p className="text-zinc-400 text-sm mb-6 text-center max-w-sm">
+                Drag and drop files here, or click to select files. Files are transferred directly to the receiver.
+              </p>
+              <input
+                type="file"
+                multiple
+                className="hidden"
+                id="file-upload"
+                onChange={(e) => handleFileSelect(e.target.files)}
+              />
+              <Button onClick={() => document.getElementById('file-upload').click()}>
+                Browse Files
+              </Button>
+            </CardContent>
+          </Card>
 
           {/* File List */}
           <Card>
@@ -159,14 +157,23 @@ export default function RoomPage(props) {
                     >
                       <div className="flex justify-between items-start mb-2">
                         <div>
-                          <p className="font-medium truncate max-w-[200px] sm:max-w-xs">{file.name}</p>
+                          <p className="font-medium truncate max-w-[200px] sm:max-w-xs">
+                            {file.name}
+                            {file.isMine && <span className="ml-2 text-[10px] uppercase bg-indigo-500/20 text-indigo-400 px-2 py-0.5 rounded-full">Sent by you</span>}
+                          </p>
                           <p className="text-xs text-zinc-400">{(file.size / (1024 * 1024)).toFixed(2)} MB</p>
                         </div>
                         <div className="flex items-center space-x-2">
-                          {isCreator && status === 'ready' && (!transfers[file.id] || ['waiting', 'disconnected'].includes(transfers[file.id]?.status)) && (
-                            <Button size="sm" onClick={startTransfer}>Announce All</Button>
+                          {/* Sender Buttons */}
+                          {file.isMine && status === 'ready' && !transfers[file.id] && (
+                            <Button size="sm" onClick={() => startTransfer(file.id)}>Announce</Button>
                           )}
-                          {!isCreator && (!transfers[file.id] || ['waiting', 'disconnected'].includes(transfers[file.id]?.status)) && (
+                          {file.isMine && status === 'ready' && transfers[file.id] && ['waiting', 'disconnected', 'canceled'].includes(transfers[file.id]?.status) && (
+                            <Button size="sm" onClick={() => startTransfer(file.id)}>Resend</Button>
+                          )}
+                          
+                          {/* Receiver Buttons */}
+                          {!file.isMine && (!transfers[file.id] || ['waiting', 'disconnected', 'canceled'].includes(transfers[file.id]?.status)) && (
                             <Button size="sm" onClick={() => requestDownload(file.id)}>Download</Button>
                           )}
                           

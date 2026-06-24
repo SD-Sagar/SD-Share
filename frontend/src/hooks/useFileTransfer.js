@@ -26,7 +26,7 @@ export const useFileTransfer = () => {
       if (typeof data === 'string') {
         const msg = JSON.parse(data);
         if (msg.type === 'FILE_METADATA') {
-          dispatch(addFiles([{ ...msg.file, id: msg.file.fileId }]));
+          dispatch(addFiles([{ ...msg.file, id: msg.file.fileId, isMine: false }]));
           dispatch(addLog({ message: `Received metadata for ${msg.file.name}` }));
         } else if (msg.type === 'CHUNK_REQUEST') {
           handleBlastFile(msg.fileId);
@@ -105,22 +105,30 @@ export const useFileTransfer = () => {
 
   const handleFileSelect = (files) => {
     const fileArray = Array.from(files);
-    setSelectedFiles(fileArray);
-    selectedFilesRef.current = fileArray;
+    
+    // Merge new files into the existing selectedFiles reference so we don't lose previous files
+    const allFiles = [...selectedFilesRef.current, ...fileArray];
+    setSelectedFiles(allFiles);
+    selectedFilesRef.current = allFiles;
     
     const metadataList = fileArray.map(f => ({
       id: generateFileId(f),
       name: f.name,
       size: f.size,
       type: f.type,
-      totalChunks: Math.ceil(f.size / CHUNK_SIZE)
+      totalChunks: Math.ceil(f.size / CHUNK_SIZE),
+      isMine: true
     }));
     
     dispatch(addFiles(metadataList));
   };
 
-  const startTransfer = async () => {
-    for (const file of selectedFiles) {
+  const startTransfer = async (specificFileId = null) => {
+    const filesToAnnounce = specificFileId 
+      ? selectedFilesRef.current.filter(f => generateFileId(f) === specificFileId)
+      : selectedFilesRef.current;
+
+    for (const file of filesToAnnounce) {
       const fileId = generateFileId(file);
       const totalChunks = Math.ceil(file.size / CHUNK_SIZE);
       
@@ -137,6 +145,9 @@ export const useFileTransfer = () => {
       
       dispatch(addLog({ message: `Announcing file ${file.name}` }));
       webrtcService.sendData(JSON.stringify(metadata));
+      
+      // Update state so the UI knows this file is waiting for the peer to download
+      dispatch(updateTransferStatus({ fileId, status: 'waiting' }));
     }
   };
 

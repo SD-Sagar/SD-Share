@@ -89,6 +89,8 @@ class WebRTCManager {
 
     this.peerConnection.ondatachannel = (event) => {
       this.dataChannel = event.channel;
+      this.dataChannel.binaryType = 'arraybuffer';
+      this.dataChannel.bufferedAmountLowThreshold = 1024 * 1024; // 1MB threshold
       this.setupDataChannel();
     };
   }
