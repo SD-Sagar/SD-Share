@@ -14,9 +14,9 @@ SD-Share is a premium, real-time peer-to-peer file sharing platform designed for
 
 ```mermaid
 graph TD
-    A[Sender Client] <-->|WebRTC Data Channel (Direct P2P)| B[Receiver Client]
-    A -.->|Signaling (Socket.IO)| C[Express 5 Server]
-    B -.->|Signaling (Socket.IO)| C
+    A[Sender Client] <-->|"WebRTC Data Channel (Direct P2P)"| B[Receiver Client]
+    A -.->|"Signaling (Socket.IO)"| C[Express 5 Server]
+    B -.->|"Signaling (Socket.IO)"| C
 ```
 
 ## 📁 Folder Structure
