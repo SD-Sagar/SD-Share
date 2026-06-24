@@ -29,6 +29,18 @@ app.get('/health', (req, res) => {
 // Future routes can be mounted here
 // app.use('/api/rooms', roomRoutes);
 
+import { createProxyMiddleware } from 'http-proxy-middleware';
+
+// Production Unified Deployment Proxy
+// If we are in production, Express will proxy all non-API and non-Socket requests to the Next.js frontend
+if (process.env.NODE_ENV === 'production') {
+  app.use('/', createProxyMiddleware({
+    target: 'http://127.0.0.1:3000',
+    changeOrigin: true,
+    ws: false // Let Express handle Socket.IO natively
+  }));
+}
+
 // Error Handling Middleware (must be last)
 app.use(errorHandler);
 
