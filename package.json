@@ -9,7 +9,7 @@
     "install-all": "npm install --legacy-peer-deps && npm install --prefix frontend --legacy-peer-deps && npm install --prefix backend --legacy-peer-deps",
     "build": "npm run build --prefix frontend"
   },
-  "devDependencies": {
+  "dependencies": {
     "concurrently": "^8.2.2"
   }
 }
