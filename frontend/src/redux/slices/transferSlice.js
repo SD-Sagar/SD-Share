@@ -18,7 +18,7 @@ const transferSlice = createSlice({
             progress: 0,
             speed: 0,
             eta: 0,
-            status: 'waiting', // waiting, transferring, paused, completed, failed
+            status: 'idle', // idle, waiting, transferring, paused, completed, failed
             receivedChunks: 0,
           };
         }

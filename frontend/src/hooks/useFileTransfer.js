@@ -19,6 +19,7 @@ export const useFileTransfer = () => {
   const currentReceiverBatchIndexRef = useRef(0);
   const currentReceiverChunkCountRef = useRef(0);
   const abortControllerRef = useRef(null);
+  const savePromisesRef = useRef([]);
   const isTransferringRef = useRef(false);
 
   useEffect(() => {
@@ -27,11 +28,15 @@ export const useFileTransfer = () => {
         const msg = JSON.parse(data);
         if (msg.type === 'FILE_METADATA') {
           dispatch(addFiles([{ ...msg.file, id: msg.file.fileId, isMine: false }]));
+          dispatch(updateTransferStatus({ fileId: msg.file.fileId, status: 'idle' }));
           dispatch(addLog({ message: `Received metadata for ${msg.file.name}` }));
         } else if (msg.type === 'CHUNK_REQUEST') {
           handleBlastFile(msg.fileId);
         } else if (msg.type === 'TRANSFER_COMPLETE') {
-          flushReceiverBuffer(); // flush remaining
+          await flushReceiverBuffer(); // flush remaining
+          await Promise.all(savePromisesRef.current);
+          savePromisesRef.current = [];
+          
           dispatch(updateTransferStatus({ fileId: msg.fileId, status: 'completed' }));
           dispatch(addLog({ message: `Transfer complete!`, type: 'success' }));
           
@@ -93,30 +98,37 @@ export const useFileTransfer = () => {
     const fileId = currentTransferFileIdRef.current;
     if (!fileId || currentReceiverBufferRef.current.length === 0) return;
     
-    const buffersToSave = currentReceiverBufferRef.current;
+    const buffersToSave = [...currentReceiverBufferRef.current];
     const batchIndex = currentReceiverBatchIndexRef.current++;
     
     currentReceiverBufferRef.current = [];
     currentReceiverBytesRef.current = 0;
 
     const combinedBlob = new Blob(buffersToSave);
-    await storageService.saveChunk(fileId, `batch_${batchIndex}`, combinedBlob);
+    const savePromise = storageService.saveChunk(fileId, `batch_${batchIndex}`, combinedBlob);
+    savePromisesRef.current.push(savePromise);
+    await savePromise;
   };
 
   const handleFileSelect = (files) => {
     const fileArray = Array.from(files);
     
-    // Merge new files into the existing selectedFiles reference so we don't lose previous files
-    const allFiles = [...selectedFilesRef.current, ...fileArray];
+    // Wrap File objects with a unique ID so we can support selecting the same file multiple times
+    const newFilesWithIds = fileArray.map(f => ({
+      id: `${f.name}-${f.size}-${f.lastModified}-${Math.random().toString(36).substring(2, 9)}`.replace(/[^a-zA-Z0-9-]/g, ''),
+      file: f
+    }));
+
+    const allFiles = [...selectedFilesRef.current, ...newFilesWithIds];
     setSelectedFiles(allFiles);
     selectedFilesRef.current = allFiles;
     
-    const metadataList = fileArray.map(f => ({
-      id: generateFileId(f),
-      name: f.name,
-      size: f.size,
-      type: f.type,
-      totalChunks: Math.ceil(f.size / CHUNK_SIZE),
+    const metadataList = newFilesWithIds.map(item => ({
+      id: item.id,
+      name: item.file.name,
+      size: item.file.size,
+      type: item.file.type,
+      totalChunks: Math.ceil(item.file.size / CHUNK_SIZE),
       isMine: true
     }));
     
@@ -125,11 +137,12 @@ export const useFileTransfer = () => {
 
   const startTransfer = async (specificFileId = null) => {
     const filesToAnnounce = specificFileId 
-      ? selectedFilesRef.current.filter(f => generateFileId(f) === specificFileId)
-      : selectedFilesRef.current;
+      ? selectedFilesRef.current.filter(f => f.id === specificFileId)
+      : selectedFilesRef.current; // Depending on requirements, we announce all selected files
 
-    for (const file of filesToAnnounce) {
-      const fileId = generateFileId(file);
+    for (const item of filesToAnnounce) {
+      const fileId = item.id;
+      const file = item.file;
       const totalChunks = Math.ceil(file.size / CHUNK_SIZE);
       
       const metadata = {
@@ -176,11 +189,12 @@ export const useFileTransfer = () => {
     abortControllerRef.current = new AbortController();
     const signal = abortControllerRef.current.signal;
 
-    const file = selectedFilesRef.current.find(f => generateFileId(f) === fileId);
-    if (!file) {
+    const item = selectedFilesRef.current.find(f => f.id === fileId);
+    if (!item) {
       isTransferringRef.current = false;
       return;
     }
+    const file = item.file;
 
     const totalChunks = Math.ceil(file.size / CHUNK_SIZE);
     let offset = 0;
@@ -232,11 +246,12 @@ export const useFileTransfer = () => {
     storageService.clearFileChunks(fileId); // Clean up disk
     currentTransferFileIdRef.current = null;
     isTransferringRef.current = false;
+    savePromisesRef.current = [];
   };
   
   const removeFromQueue = (fileId) => {
     cancelTransfer(fileId);
-    selectedFilesRef.current = selectedFilesRef.current.filter(f => generateFileId(f) !== fileId);
+    selectedFilesRef.current = selectedFilesRef.current.filter(f => f.id !== fileId);
     setSelectedFiles(selectedFilesRef.current);
     dispatch(removeFile(fileId));
   };

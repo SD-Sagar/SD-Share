@@ -129,7 +129,10 @@ export default function RoomPage(props) {
                 multiple
                 className="hidden"
                 id="file-upload"
-                onChange={(e) => handleFileSelect(e.target.files)}
+                onChange={(e) => {
+                  handleFileSelect(e.target.files);
+                  e.target.value = null;
+                }}
               />
               <Button onClick={() => document.getElementById('file-upload').click()}>
                 Browse Files
@@ -165,15 +168,18 @@ export default function RoomPage(props) {
                         </div>
                         <div className="flex items-center space-x-2">
                           {/* Sender Buttons */}
-                          {file.isMine && status === 'ready' && !transfers[file.id] && (
+                          {file.isMine && status === 'ready' && (!transfers[file.id] || transfers[file.id]?.status === 'idle') && (
                             <Button size="sm" onClick={() => startTransfer(file.id)}>Announce</Button>
                           )}
-                          {file.isMine && status === 'ready' && transfers[file.id] && ['waiting', 'disconnected', 'canceled'].includes(transfers[file.id]?.status) && (
+                          {file.isMine && status === 'ready' && transfers[file.id] && ['waiting'].includes(transfers[file.id]?.status) && (
+                            <Button size="sm" variant="outline" disabled>Waiting...</Button>
+                          )}
+                          {file.isMine && status === 'ready' && transfers[file.id] && ['disconnected', 'canceled', 'completed'].includes(transfers[file.id]?.status) && (
                             <Button size="sm" onClick={() => startTransfer(file.id)}>Resend</Button>
                           )}
                           
                           {/* Receiver Buttons */}
-                          {!file.isMine && (!transfers[file.id] || ['waiting', 'disconnected', 'canceled'].includes(transfers[file.id]?.status)) && (
+                          {!file.isMine && (!transfers[file.id] || ['idle', 'waiting', 'disconnected', 'canceled'].includes(transfers[file.id]?.status)) && (
                             <Button size="sm" onClick={() => requestDownload(file.id)}>Download</Button>
                           )}
                           
